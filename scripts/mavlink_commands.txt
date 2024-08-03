@@ -1,0 +1,72 @@
+# setup the transimitter channels
+param set RCMAP_ROLL 2
+param set RCMAP_PITCH 3
+param set RCMAP_THROTTLE 1
+param set RCMAP_YAW 4
+param set FLTMODE_CH 5
+param set FLTMODE1 4
+param set FLTMODE4 5
+param set FLTMODE6 0
+param set RC7_OPTION 31
+param set RC8_OPTION 41
+
+# setup vicon
+param set SERIAL1_PROTOCOL 2
+param set SERIAL1_BAUD 921600
+param set EK3_ENABLE 1
+param set EK2_ENABLE 0
+param set AHRS_EKF_TYPE 3
+param set GPS_TYPE 14
+param set GPS_DELAY_MS 50
+
+param set COMPASS_USE 0
+param set COMPASS_USE2 0
+param set COMPASS_USE3 0
+param set EK3_MAG_CAL 3
+
+param set EK3_SRC1_POSXY 3
+param set EK3_SRC1_POSZ 3
+param set EK3_SRC1_YAW 2
+param set EK3_SRC1_VELXY 3
+param set EK3_SRC1_VELZ 3
+
+# run vicon in mavproxy (everytime restart mavproxy)
+module load vicon 
+vicon start
+set streamrate 20
+
+vicon set host 192.168.1.4
+
+### disable battery monitor
+param set BATT_MONITOR 0
+### enable battery_monitor
+param set BATT_MONITOR 4
+param set BATT_ARM_VOLT 11.1
+
+# good parameters
+param set INS_GYRO_FILTER 20
+param set INS_ACCEL_FILTER 20
+
+param set ATC_ACCEL_P_MAX  110000.000000
+param set ATC_ACCEL_R_MAX  110000.000000
+param set ATC_ACCEL_Y_MAX  27000.000000
+param set ATC_SLEW_YAW     6000.000000
+param set ATC_INPUT_TC 0.15
+
+param set PSC_JERK_XY 20
+param set PSC_JERK_Z 20
+param set ANGLE_MAX 3000
+
+# aggressive parameters
+param set INS_GYRO_FILTER 60
+param set INS_ACCEL_FILTER 60
+
+param set ATC_ACCEL_R_MAX 162000
+param set ATC_ACCEL_P_MAX 162000
+param set ATC_ACCEL_Y_MAX 100000
+param set ATC_SLEW_YAW 18000
+param set ATC_INPUT_TC 0.05
+
+param set PSC_JERK_XY 20
+param set PSC_JERK_Z 20
+param set ANGLE_MAX 3000

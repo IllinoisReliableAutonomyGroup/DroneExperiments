@@ -1,0 +1,425 @@
+#!/usr/bin/env python3
+'''
+Main script. Will use Apriltags to localise position and send via mavlink
+
+'''
+import time
+from importlib import import_module
+from statistics import mean
+from collections import deque
+import numpy as np
+import argparse
+import threading
+import signal
+import sys
+import os
+import rospy
+import yaml
+import numpy
+import cv2
+import csv
+import sys
+import cv2.aruco as aruco
+from pymavlink import mavutil
+
+from lib.geo import tagDB
+from lib.videoStream import videoThread
+from lib.saveStream import saveThread
+
+
+from DroneExperiments.ros.DroneInterface import Drone
+from DroneExperiments.core.constants import dt
+from DroneExperiments.vision.detect_aruco import detect_aruco, get_camera, release_camera
+from DroneExperiments.vision.cam2drone import get_T_DC
+from DroneExperiments.utils import transformations
+from geometry_msgs.msg import Vector3, Point, Quaternion, Pose
+from DroneExperiments.utils.transformations import quaternion_from_matrix, euler_from_quaternion
+
+exit_event = threading.Event()
+
+
+def signal_handler(signum, frame):
+    exit_event.set()
+
+
+class statusThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.lastFiveProTimes = deque(maxlen=5)
+        self.pos = (0, 0, 0)
+        self.rot = (0, 0, 0)
+        self.pktSent = 0
+
+    def updateData(self, proTime, newPos, newRot, pktWasSent):
+        self.lastFiveProTimes.append(proTime)
+        self.pos = newPos
+        self.rot = newRot
+        self.pktSent = pktWasSent
+
+    def run(self):
+        while True:
+            if len(self.lastFiveProTimes) > 0:
+                fps = 1/mean(self.lastFiveProTimes)
+            else:
+                fps = 0
+            # print("Status: {0:.1f}fps, PosNED = {1}, PosRPY = {2}, Packets sent = {3}".format(
+            #     fps, self.pos, self.rot, self.pktSent))
+            if exit_event.wait(timeout=2):
+                return
+
+
+class mavThread(threading.Thread):
+    def __init__(self, device, baud, source_system):
+        threading.Thread.__init__(self)
+        self.device = device
+        self.baud = baud
+        self.source_system = source_system
+        self.heartbeatTimestamp = time.time()
+        self.lock = threading.Lock()
+        self.conn = None
+        self.goodToSend = False
+        self.reset_counter = 0
+        self.pos = (0, 0, 0)
+        self.speed = (0, 0, 0)
+        self.rot = (0, 0, 0)
+        self.time = 0
+        self.pktSent = 0
+        self.target_system = 1
+        self.origin_lat = -35.363261
+        self.origin_lon = 149.165230
+        self.origin_alt = 0
+        self.posDelta = (0, 0, 0)
+        self.rotDelta = (0, 0, 0)
+        self.t0 = 0
+        
+
+
+    def updateData(self, newPos, newRot, t, posDelta, rotDelta):
+        with self.lock:
+            if self.time != 0:
+                # time is in usec here, remember to convert to sec
+                self.speed = numpy.array(posDelta)/ (1E-6 * (t - self.time))
+            self.pos = newPos
+            self.rot = newRot
+            self.time = t
+            self.posDelta = posDelta
+            self.rotDelta = rotDelta
+
+    def run(self):
+        # Start mavlink connection
+        try:
+            self.conn = mavutil.mavlink_connection(self.device, autoreconnect=True, source_system=self.source_system,
+                                                   baud=self.baud, force_connected=False, source_component=mavutil.mavlink.MAV_COMP_ID_VISUAL_INERTIAL_ODOMETRY)
+        except Exception as msg:
+            print("Failed to start mavlink connection on %s: %s" %
+                  (self.device, msg,))
+            raise
+
+        # wait for the heartbeat msg to find the system ID. Need to exit from here too
+        # We are sending a heartbeat signal too, to allow ardupilot to init the comms channel
+        while True:
+            self.sendHeartbeatAndEKFOrigin()
+            if self.conn.wait_heartbeat(timeout=0.5) != None:
+                # Got a hearbeart, go to next loop
+                self.goodToSend = True
+                break
+            if exit_event.is_set():
+                return
+
+        print("Got Heartbeat from APM (system %u component %u)" %
+              (self.conn.target_system, self.conn.target_system))
+        self.send_msg_to_gcs("Starting")
+
+        while True:
+            msg = self.conn.recv_match(blocking=True, timeout=0.5)
+            # loop at 20 Hz
+            time.sleep(0.05)
+            # time.sleep(5)
+            # self.sendPos()
+            # self.sendSpeed()
+            #self.sendPosDelta()
+            self.sendHeartbeatAndEKFOrigin()
+            if exit_event.is_set():
+                self.send_msg_to_gcs("Stopping")
+                return
+
+    def sendHeartbeatAndEKFOrigin(self):
+        # send heartbeat and EKF origin messages if more than 1 sec since last message
+        if (self.heartbeatTimestamp + 1) < time.time():
+            self.conn.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_ONBOARD_CONTROLLER,
+                                         mavutil.mavlink.MAV_AUTOPILOT_GENERIC,
+                                         0,
+                                         0,
+                                         0)
+            self.set_default_global_origin()
+            self.heartbeatTimestamp = time.time()
+
+    def getPktSent(self):
+        with self.lock:
+            return self.pktSent
+
+    # https://mavlink.io/en/messages/common.html#STATUSTEXT
+    def send_msg_to_gcs(self, text_to_be_sent):
+        # MAV_SEVERITY: 0=EMERGENCY 1=ALERT 2=CRITICAL 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG, 8=ENUM_END
+        text_msg = 'AprilMAV: ' + text_to_be_sent
+        self.conn.mav.statustext_send(
+            mavutil.mavlink.MAV_SEVERITY_INFO, text_msg.encode())
+
+    # Send a mavlink SET_GPS_GLOBAL_ORIGIN message (http://mavlink.org/messages/common#SET_GPS_GLOBAL_ORIGIN), for the EKF origin
+
+    def set_default_global_origin(self):
+        current_time_us = int(round(time.time() * 1000000))
+        self.conn.mav.set_gps_global_origin_send(self.target_system,
+                                                 int(self.origin_lat*1.0e7),
+                                                 int(self.origin_lon*1.0e7),
+                                                 int(self.origin_alt*1.0e3),
+                                                 current_time_us)
+
+    def sendPos(self):
+        # Send a vision pos estimate
+        # https://mavlink.io/en/messages/common.html#VISION_POSITION_ESTIMATE
+        # if self.getTimestamp() > 0:
+        
+        if self.goodToSend:
+            current_time_us = int(round(time.time() * 1000000))
+            # estimate error - approx 0.01m in pos and 0.5deg in angle
+            cov_pose = 0.01
+            cov_twist = 0.5
+            covariance = numpy.array([cov_pose, 0, 0, 0, 0, 0,
+                                      cov_pose, 0, 0, 0, 0,
+                                      cov_pose, 0, 0, 0,
+                                      cov_twist, 0, 0,
+                                      cov_twist, 0,
+                                      cov_twist])
+            with self.lock:
+                # print("pos aprilmav",numpy.round(self.pos[0],2), numpy.round(self.pos[1],2), numpy.round(self.pos[2],2))
+                # print("rot aprilmav",numpy.round(self.rot[0]*180/numpy.pi,2), numpy.round(self.rot[1]*180/numpy.pi,2), numpy.round(self.rot[2]*180/numpy.pi,2))
+                self.conn.mav.vision_position_estimate_send(
+                    current_time_us, self.pos[0], self.pos[1], self.pos[2], self.rot[0], self.rot[1], self.rot[2], covariance, reset_counter=self.reset_counter)
+                self.pktSent += 1
+                # print("time elapsed",time.time()-self.t0)
+                # self.t0 = time.time()
+
+                # data = [self.t0,self.pos[0], self.pos[1], self.pos[2] ]
+                # writer.writerow(data)
+
+            # Note for mav.vision_position_estimate_send
+                # us Timestamp (UNIX time or time since system boot)
+                # Global X position
+                # Global Y position
+                # Global Z position
+                # Roll angle
+                # Pitch angle
+                # Yaw angle
+                # Row-major representation of pose 6x6 cross-covariance matrix
+                # Estimate reset counter. Increment every time pose estimate jumps.
+
+    def sendSpeed(self):
+        # Send a vision speed estimate
+        # https://mavlink.io/en/messages/common.html#VISION_SPEED_ESTIMATE
+        if self.goodToSend:
+            current_time_us = int(round(time.time() * 1000000))
+            # estimate error - approx 0.05m/s in pos
+            cov_pose = 0.05
+            covariance = numpy.array([cov_pose, 0, 0,
+                                      0, cov_pose, 0,
+                                      0, 0, cov_pose])
+            with self.lock:
+                self.conn.mav.vision_speed_estimate_send(
+                    current_time_us, self.speed[0], self.speed[1], self.speed[2], covariance, reset_counter=self.reset_counter)
+                self.pktSent += 1
+            
+            # vision_speed_estimate_send:
+                # us Timestamp (UNIX time or time since system boot)
+                # Global X speed
+                # Global Y speed
+                # Global Z speed
+                # covariance
+                # Estimate reset counter. Increment every time pose estimate jumps.
+
+    def sendPosDelta(self):
+        # Send a vision pos delta
+        # https://mavlink.io/en/messages/ardupilotmega.html#VISION_POSITION_DELTA
+        if self.goodToSend:
+            with self.lock:
+                current_time_us = int(round(time.time() * 1000000))
+                delta_time_us = current_time_us - self.time
+                current_confidence_level = 80
+                
+                # Send the message
+                self.conn.mav.vision_position_delta_send(
+                    current_time_us,    # us: Timestamp (UNIX time or time since system boot)
+                    delta_time_us,	    # us: Time since last reported camera frame
+                    self.rotDelta,    # float[3] in radian: Defines a rotation vector in body frame that rotates the vehicle from the previous to the current orientation
+                    self.posDelta,   # float[3] in m: Change in position from previous to current frame rotated into body frame (0=forward, 1=right, 2=down)
+                    current_confidence_level # Normalized confidence value from 0 to 100. 
+                )
+                self.pktSent += 1
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tagSize", type=int, default=96,
+                        help="Arucomarker size in mm")
+    parser.add_argument("--camera", type=str, default="GenericUSB",
+                        help="Camera profile in camera.yaml")
+    parser.add_argument("--maxerror", type=int, default=400,
+                        help="Maximum pose error to use, in n*E-8 units")
+    parser.add_argument("--outfile", type=str, default="geo_test_results.csv",
+                        help="Output tag data to this file")
+    parser.add_argument(
+        "--device", type=str, default='udp:127.0.0.1:10101', help="MAVLink connection string")
+    parser.add_argument("--baud", type=int, default=115200,
+                        help="MAVLink baud rate, if using serial")
+    parser.add_argument("--source-system", type=int,
+                        default=1, help="MAVLink Source system")
+    parser.add_argument("--imageFolder", type=str, default="",
+                        help="Save processed images to this folder")
+    parser.add_argument("--video", type=int, default=0,
+                        help="Output video to port, 0 to disable")
+    parser.add_argument("--decimation", type=int,
+                        default=2, help="Apriltag decimation")
+    parser.add_argument("--navigation_mode", type=str, default='vision',
+                        help="Switches between vicon & vision navigation")
+    args = parser.parse_args()
+
+    print("Initialising")
+    
+    rospy.init_node('landing_vision_module', anonymous=True)
+    drone = Drone()
+    current_state = drone.state
+
+    camera = get_camera()
+
+    # All tags live in here
+    tagPlacement = tagDB(False)
+
+    outfile = open(args.outfile, "w+")
+    # left, up, fwd, pitch, yaw, roll
+    outfile.write("{0},{1},{2},{3},{4},{5},{6}\n".format(
+        "Filename", "PosX (m)", "PosY (m)", "PosZ (m)", "RotX (rad)", "RotY (rad)", "RotZ (rad)"))
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    # stdoutOrigin = sys.stdout
+    # sys.stdout = open("test_log.txt",'w')
+
+    # Start MAVLink comms thread
+    threadMavlink = mavThread(args.device, args.baud, args.source_system)
+    threadMavlink.start()
+
+    # Start Status thread
+    threadStatus = statusThread()
+    threadStatus.start()
+
+    # Start save image thread, if desired
+    threadSave = None
+    if args.imageFolder != "":
+        threadSave = saveThread(args.imageFolder, exit_event)
+        threadSave.start()
+
+    # video stream out, if desired
+    threadVideo = None
+    if args.video != 0:
+        threadVideo = videoThread(args.video, exit_event)
+        threadVideo.start()
+
+    i = 0
+
+    if args.navigation_mode != 'vision':
+        snap_state = current_state.copy()
+        vicon_position_offset = [snap_state[0],snap_state[1],snap_state[2]]
+
+    header = ['timestamp', 'PosX','PosY','PosZ','VelX','VelY','VelZ','AcelX','AcelY','AcelZ']
+    data = ['Afghanistan', 652090, 'AF', 'AFG']
+
+    f = open('countries.csv', 'w')
+
+    # create the csv writer
+    writer = csv.writer(f)
+    writer.writerow(header)
+
+
+  
+    while True:
+        # print("--------------------------------------")
+
+        myStart = time.time()
+
+        # grab an image (and timestamp in usec) from the camera
+        # estimate 50usec from timestamp to frame capture on next line
+        timestamp = int(round(time.time() * 1000000)) + 50
+        #print("Timestamp of capture = {0}".format(timestamp))
+        i += 1
+
+        snap_state = current_state.copy()
+        # print("Snap state",snap_state)
+
+        Ts, ids = detect_aruco(camera, visualize=False)
+
+        tagsused = 0
+        for iter in range(len(ids)):
+            tagsused +=1
+            tagPlacement.addTag(Ts[iter],ids[iter])
+            # tagPlacement.debug_NED(Ts[iter])
+
+        tagPlacement.getBestTransform()
+
+
+        # get current location and rotation state of vehicle in ArduPilot NED format (rel camera)
+        (posD, rotD) = tagPlacement.getArduPilotNED()
+        # print("POSD",numpy.round(posD,2))
+        # print("ROT",numpy.round(rotD, 1))
+        (posRDelta_test, rotRDelta_test) = tagPlacement.getArduPilotNEDDelta()
+        # print("POSD_delta",numpy.round(posRDelta_test,2))
+        # print("rotD_delta",numpy.round(rotRDelta_test,2))
+        (posR, rotR) = tagPlacement.getArduPilotNED(radians=True)
+        # (posRDelta, rotRDelta) = tagPlacement.getArduPilotNEDDelta(radians=True)
+        posRDelta = (0,0,0)
+        rotRDelta = (0,0,0)
+        #print("Time to capture, detect and localise = {0:.3f} sec, using {2}/{1} tags".format(time.time() - myStart, len(tags), len(tagPlacement.tagDuplicatesT)))
+
+        if args.navigation_mode != 'vision':
+            # Vicon Navigation
+            posR = ((snap_state[0]-vicon_position_offset[0]),-(snap_state[1]-vicon_position_offset[1]),-(snap_state[2]-vicon_position_offset[2]))
+            
+            q = snap_state[11:15]
+            
+            vicon_euler = np.array(euler_from_quaternion(q, 'sxyz')) 
+            rotR = (vicon_euler[1], -vicon_euler[0], -vicon_euler[2])
+            # print("Vicon pos", np.round(posR,2))
+            # print("Vicon Euler",np.round(rotR/ np.pi  * 180.,2))
+
+
+        # Create and send MAVLink packet
+        threadMavlink.updateData(posR, rotR, timestamp, posRDelta, rotRDelta)
+        #wasSent = threadMavlink.sendPos(posR[0], posR[1], posR[2], rotR[0], rotR[1], rotR[2], timestamp)
+
+        # Send to status thread
+        threadStatus.updateData(time.time(
+        ) - myStart, (posD[0], posD[1], posD[2]), (rotD[0], rotD[1], rotD[2]), threadMavlink.getPktSent())
+
+        # Send to save thread
+        if threadSave:
+            threadSave.save_queue.put((imageBW, os.path.join(
+                ".", args.imageFolder, "processed_{:04d}.jpg".format(i)), posD, rotD, tags))
+
+        threadMavlink.sendPos()
+        # # Get ready for next frame
+        tagPlacement.newFrame()
+
+        # Send to video stream, if option
+        if threadVideo:
+            threadVideo.frame_queue.put((imageBW, posD, rotD, tags))
+
+        if exit_event.is_set():
+            break
+
+        # write the data
+        # data = [snap_state[-1],snap_state[0],snap_state[1],snap_state[2],snap_state[3],snap_state[4],snap_state[5],snap_state[6],snap_state[7],snap_state[8]]
+        # writer.writerow(data)
+
+    # close the file
+    f.close()
+
+    # sys.stdout.close()
+    # sys.stdout = stdoutOrigin

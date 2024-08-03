@@ -1,0 +1,180 @@
+Status: 0.0fps, PosNED = (0, 0, 0), PosRPY = (0, 0, 0), Packets sent = 0
+Got Heartbeat from APM (system 1 component 1)
+Status: 10.3fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 0
+Status: 11.4fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 0
+Status: 9.8fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 2
+Status: 11.1fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 2
+Status: 10.7fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 2
+Status: 10.7fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 4
+Status: 10.9fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 4
+Status: 11.3fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 6
+Status: 12.8fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 6
+Status: 10.7fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 6
+Status: 10.6fps, PosNED = (-0.004264092230746723, 0.056882233421370665, 0.07422993276910266), PosRPY = (-4.012351091442983, 118.47499195955326, -176.93325418538205), Packets sent = 8
+Status: 11.3fps, PosNED = (-0.004264092230746729, 0.05688223342137065, 0.07422993276910266), PosRPY = (-4.012351091442984, 118.47499195955326, -176.93325418538205), Packets sent = 8
+Status: 11.2fps, PosNED = (-0.0014361337126157334, 0.05895847217168472, 0.07389241477218324), PosRPY = (-3.8394327610124193, 118.15476096163312, -176.71626144117158), Packets sent = 10
+Status: 9.9fps, PosNED = (0.017218818018020755, 0.07077891817427424, 0.08668340957022527), PosRPY = (-2.9153649542082727, 116.92497068478204, -175.03426137022433), Packets sent = 10
+Status: 8.8fps, PosNED = (-0.09705970927806139, -0.09024096169437847, -0.16075764098873363), PosRPY = (0.5698262625052191, 117.21824834289214, -177.1908713772211), Packets sent = 10
+Status: 9.2fps, PosNED = (-0.41595245860143465, 0.09495753900646736, 0.05983565273464353), PosRPY = (-3.8794210699040375, 114.29388006575267, -176.748493434219), Packets sent = 12
+Status: 9.2fps, PosNED = (-0.8774728812896467, 0.37952165736218296, 0.31489449506932177), PosRPY = (-0.20534013333058315, 117.35789379530846, -177.45104380905485), Packets sent = 12
+Status: 10.1fps, PosNED = (-0.9636710312328528, 0.388890389331712, 0.5838328163881993), PosRPY = (-3.4665269585698986, 116.87024292313785, -176.16538156197902), Packets sent = 14
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+Status: 12.2fps, PosNED = (-1.6183560293824617, 0.1808286790132895, 1.8258028384660836), PosRPY = (4.040861711331122, 114.53595255546655, 178.6901523443168), Packets sent = 14
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+Status: 14.5fps, PosNED = (-1.6183560293824617, 0.1808286790132895, 1.8258028384660836), PosRPY = (4.040861711331122, 114.53595255546655, 178.6901523443168), Packets sent = 14
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+Status: 14.9fps, PosNED = (-1.6183560293824617, 0.1808286790132895, 1.8258028384660836), PosRPY = (4.040861711331122, 114.53595255546655, 178.6901523443168), Packets sent = 16
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+Status: 12.1fps, PosNED = (-1.6183560293824617, 0.1808286790132895, 1.8258028384660836), PosRPY = (4.040861711331122, 114.53595255546655, 178.6901523443168), Packets sent = 16
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+Status: 13.4fps, PosNED = (-1.6183560293824617, 0.1808286790132895, 1.8258028384660836), PosRPY = (4.040861711331122, 114.53595255546655, 178.6901523443168), Packets sent = 18
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+Status: 13.4fps, PosNED = (-1.6183560293824617, 0.1808286790132895, 1.8258028384660836), PosRPY = (4.040861711331122, 114.53595255546655, 178.6901523443168), Packets sent = 18
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view
+WARNING: No tags in view

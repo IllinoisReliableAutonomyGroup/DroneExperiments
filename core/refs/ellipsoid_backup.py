@@ -17,11 +17,11 @@ def xyz(args, real_t):
     b = sizey  # semi-major axis in y direction
     
     # Parametric equations for a 2D ellipse
-    y = a * np.sin(t)
+    x = a * np.sin(t)
     z = b * np.cos(t)
 
-    x = np.ones_like(y) * 3.22 # 1
-    y += 0.5
+    y = np.ones_like(x) * (-3.7) # 1
+    x += 0.5
     z += 1.5
 
     return x, y, z

@@ -118,7 +118,7 @@ def main():
 
     rospy.loginfo('Finished tracking')
 
-    for i in range(10):
+    for i in range(5):
         drone.disarm()
         rate.sleep()
 

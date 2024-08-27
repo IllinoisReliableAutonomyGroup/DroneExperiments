@@ -45,6 +45,9 @@ def generate_template(array):
         elif i==11:
             template[start_idx:end_idx+1,0] = np.linspace(1,2,end_idx-start_idx+1)
             template[start_idx:end_idx,1] = 2
+    for i in range(template.shape[0]):
+        if np.all(template[i,:] == np.array([0,0])):
+            template[i,:] = (template[i-1,:]+template[i+1,:])/2
 
     return template
 
@@ -55,7 +58,7 @@ def xyz(args, real_t):
     # period = 16
 
     # t = real_t/period
-    t = real_t*0.8
+    t = real_t*0.6
 
     t = np.round(t, 6)
 
@@ -85,7 +88,7 @@ def xyz(args, real_t):
 
 if __name__ == "__main__":
     args = None
-    real_t = np.arange(0,45,0.05) 
+    real_t = np.arange(0,40,0.05) 
 
     x,y,z = xyz(args, real_t)
 

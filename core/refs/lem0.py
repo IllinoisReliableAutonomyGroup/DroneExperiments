@@ -57,6 +57,9 @@ def generate_template(array):
         elif i==15:
             template[start_idx:end_idx+1,0] = np.linspace(1,2,end_idx-start_idx+1)
             template[start_idx:end_idx,1] = 2
+    for i in range(template.shape[0]):
+        if np.all(template[i,:] == np.array([0,0])):
+            template[i,:] = (template[i-1,:]+template[i+1,:])/2
 
     return template
 

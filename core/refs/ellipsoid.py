@@ -25,3 +25,10 @@ def xyz(args, real_t):
     z += 1.5
 
     return x, y, z
+
+if __name__ == "__main__":
+    real_t = np.arange(0,45,0.05)
+    traj = xyz((15,2,0.5), real_t)
+    traj = np.array(traj)
+    vel = np.linalg.norm(traj[:,1:]-traj[:,:-1], axis=0)/0.05
+    print(vel.max())

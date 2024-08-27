@@ -66,28 +66,29 @@ def xyz(args, real_t):
     # period = 16
 
     # t = real_t/period
+    t = real_t*0.8
 
-    real_t = np.round(real_t, 4)
+    t = np.round(t, 6)
 
-    y = np.zeros(real_t.shape)
-    z = np.zeros(real_t.shape)
+    y = np.zeros(t.shape)
+    z = np.zeros(t.shape)
 
-    start_idx, end_idx = find_index_range(real_t, (0,16))
-    template = generate_template(real_t[start_idx:end_idx+1])
-    y[start_idx:end_idx+1] = template[:,0]
-    z[start_idx:end_idx+1] = template[:,1]
-
-
-    start_idx, end_idx = find_index_range(real_t, (16,32))
-    # template = generate_template(real_t[start_idx:end_idx])
-    y[start_idx:end_idx+1] = template[:,0]
-    z[start_idx:end_idx+1] = template[:,1]
-
-
-    start_idx, end_idx = find_index_range(real_t, (32,48))
-    # template = generate_template(real_t[start_idx:end_idx])
+    start_idx, end_idx = find_index_range(t, (0,16))
+    template = generate_template(t[start_idx:end_idx+1])
     y[start_idx:end_idx+1] = template[0:y[start_idx:end_idx+1].shape[0],0]
-    z[start_idx:end_idx+1] = template[0:y[start_idx:end_idx+1].shape[0],1]
+    z[start_idx:end_idx+1] = template[0:z[start_idx:end_idx+1].shape[0],1]
+
+
+    start_idx, end_idx = find_index_range(t, (16,32))
+    # template = generate_template(t[start_idx:end_idx])
+    y[start_idx:end_idx+1] = template[0:y[start_idx:end_idx+1].shape[0],0]
+    z[start_idx:end_idx+1] = template[0:z[start_idx:end_idx+1].shape[0],1]
+
+
+    start_idx, end_idx = find_index_range(t, (32,48))
+    # template = generate_template(t[start_idx:end_idx])
+    y[start_idx:end_idx+1] = template[0:y[start_idx:end_idx+1].shape[0],0]
+    z[start_idx:end_idx+1] = template[0:z[start_idx:end_idx+1].shape[0],1]
 
     y += 0.5
     x = np.ones_like(y) * 3.22
@@ -95,13 +96,17 @@ def xyz(args, real_t):
 
 if __name__ == "__main__":
     args = None
-    real_t = np.arange(0,48+0.05,0.1) 
+    real_t = np.arange(0,40,0.05) 
 
     x,y,z = xyz(args, real_t)
 
     import matplotlib.pyplot as plt 
 
-    fig = plt.figure()
+    fig = plt.figure(0)
     ax = plt.axes(projection='3d')
     ax.plot3D(x,y,z)
+    plt.figure(1)
+    plt.plot(real_t, x)
+    plt.plot(real_t, y)
+    plt.plot(real_t, z)
     plt.show()
